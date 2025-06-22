@@ -1,50 +1,121 @@
 # Pulse
 
-Pulse is a lightweight and powerful Luau library designed to bring reactivity, real-time updates, and event-driven programming to your Roblox experience. Whether you're managing UI updates, gameplay logic, or dynamic data flows, Pulse keeps your game state in sync and highly responsive.
+**Pulse** is a lightweight, path-based module loader for Roblox that improves initial load times and memory usage by lazy-loading modules on demand using string paths. Pulse automatically scans and registers modules from `ReplicatedStorage` and `ServerScriptService`, respecting client, server, and shared boundaries.
+
+---
 
 ## Features
 
-- **Reactivity**: Automatically update game components when your data changes.
-- **Real-Time Updates**: Maintain seamless synchronization of state across your game.
-- **Event-Driven Programming**: Easily set up listeners and emitters for efficient communication between game systems.
-- **Luau-first**: Built specifically for Roblox's scripting language, ensuring performance and easy integration.
+- **Path-Based Module Loading**: Require modules with a simple string path, e.g., `"Services.DataService"`.
+- **Lazy Loading**: Modules are only loaded when needed, not at startup.
+- **Automatic Registration**: Modules are automatically scanned and registered from your game hierarchy.
+- **Asset & Config Loading**: Automatically loads assets and configuration folders into accessible tables.
+- **Debug Support**: Easily enable debug mode for verbose logging.
+- **Client/Server Aware**: Only loads appropriate modules depending on whether running on the client or server.
+- **Immutable API**: The Pulse API is frozen to prevent accidental modification.
 
-## Getting Started
+---
 
-1. **Installation**
+## Usage
 
-   - Clone or download the repository.
-   - Add the Pulse library to your Roblox game or project.
+### 1. Installation
 
-2. **Basic Usage**
+Copy `main.luau` from `src/ReplicatedStorage/Library/main.luau` into your project, or include the Pulse source folder as-is.
 
-   ```lua
-   local Pulse = require(path.to.Pulse)
+### 2. Folder Structure
 
-   local state = Pulse.State(0)
-   local connection = state:OnChanged(function(newValue)
-      print("State changed to:", newValue)
-   end)
+Pulse expects your folders to be structured like this (at minimum):
 
-   state:Set(5) -- Output: State changed to: 5
-   ```
+```
+ReplicatedStorage
+└── Library
+    ├── Modules
+    │   └── Shared
+    │       ├── ExampleModule.luau
+    │       └── ...
+    ├── Classes
+    ├── Services
+    ├── Handlers
+    └── Configuration
+ServerScriptService
+└── Library
+    ├── Classes
+    ├── Services
+    ├── Handlers
+    └── Configuration
+ReplicatedStorage
+└── Assets
+```
 
-3. **Documentation**
+- **Modules/Shared**: Shared modules for both client and server.
+- **Classes/Services/Handlers**: Server-side or client-side specific logic (depending on location).
+- **Assets**: Any Roblox Instances/objects you want to load as assets.
+- **Configuration**: Folders with `ValueBase` objects (e.g., `StringValue`, `IntValue`) for config loading.
 
-   - Full API and usage documentation coming soon.
-   - Example scripts and advanced patterns will be provided for common Roblox game scenarios.
+### 3. Basic Example
 
-## Plugin
+```lua
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Pulse = require(ReplicatedStorage.Library.main)
 
-A plugin for autocomplete is planned and currently under development. It will be available soon in the `plugin/` directory.
+-- Require a module by path
+local DataService = Pulse:require("Services.DataService")
 
-## Contributing
+-- Access assets
+local MyAsset = Pulse.assets.MyAssetName
 
-Contributions are welcome! If you have suggestions, bug reports, or would like to help develop Pulse, please open an issue or submit a pull request.
+-- Access config values
+local MySetting = Pulse.config.MySetting
+```
+
+### 4. Enabling Debug Mode
+
+Set the `_debug` property in your configuration folder (as a `BoolValue`) to enable debug logging:
+
+```
+ReplicatedStorage
+└── Library
+    └── Configuration
+        └── _debug (BoolValue)
+```
+
+---
+
+## API Reference
+
+### `Pulse:require(modulePath: string): any`
+
+Loads and returns the module for the given string path.
+- Throws an error if the module is not found or cannot be loaded.
+
+### `Pulse.assets: { [string]: Instance }`
+
+A table containing all assets loaded from the `Assets` folder and its subfolders.
+
+### `Pulse.config: { [string]: any }`
+
+A table containing all configuration values loaded from `Configuration` folders.
+
+### `Pulse._debug: boolean`
+
+Whether debug mode is active (set via config).
+
+---
+
+## Advanced
+
+- **Automatic Scanning**: On initialization, Pulse scans through the relevant folders (`Library`, `Modules.Shared`, `Classes`, `Services`, `Handlers`, `Assets`, `Configuration`) and registers all `ModuleScript` instances for easy path-based requiring.
+- **Caching**: Once a module is loaded, it is cached for future use.
+- **Error Handling**: If a module fails to load, an error is printed and rethrown with details.
+
+---
+
+## Contribution
+
+Feel free to suggest improvements or open issues!
+
+---
 
 ## License
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
-
----
-*Created by [GameRipper665](https://github.com/GameRipper665)*
+MIT
